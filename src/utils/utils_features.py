@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import networkx as nx
-from utils_networks import godfhater_index, bridging_centrality, favor_centrality
+from src.utils.utils_networks import godfhater_index, bridging_centrality, favor_centrality
 
 import os
 from pathlib import Path
@@ -18,39 +18,32 @@ class NetworkFeatureComputation:
         '''
         self.df = pd.DataFrame(list(self.G.nodes), columns=['country_industry'])
         
-        print('betweenness_centrality')
         betweenness_centrality_dict = nx.betweenness_centrality(self.G, k = min((len(self.G.nodes), 100)))
         betweenness_centrality_dict = {k:{'betweenness_centrality':v} for k,v in betweenness_centrality_dict.items()}
         nx.set_node_attributes(self.G, betweenness_centrality_dict)
           
-        print('pagerank')
         pagerank_dict = nx.pagerank(self.G)
         pagerank_dict = {k:{'pagerank':v} for k,v in pagerank_dict.items()}
         nx.set_node_attributes(self.G, pagerank_dict)
         
-        print('hits')
         h,a=nx.hits(self.G, max_iter=300)
         h = {k:{'hubs':v} for k,v in h.items()}
         a = {k:{'authorities':v} for k,v in a.items()}
         nx.set_node_attributes(self.G, h)
         nx.set_node_attributes(self.G, a)
         
-        print('godfather index')
         gfi = godfhater_index(self.G, tol=0.01)
         gfi = {k:{'gfi':v} for k,v in gfi.items()}
         nx.set_node_attributes(self.G, gfi)     
         
-        print('bridging centrality')
         bridging = bridging_centrality(self.G)
         bridging = {k:{'bridging':v} for k,v in bridging.items()}
         nx.set_node_attributes(self.G, bridging)     
         
-        print('favor centrality')
         favor = favor_centrality(self.G, tol=tol_favor)
         favor = {k:{'favor':v} for k,v in favor.items()}
         nx.set_node_attributes(self.G, favor)   
         
-        print('HHI index')
         g = nx.linalg.graphmatrix.adjacency_matrix(self.G).toarray()
         g = np.nan_to_num(g)
         

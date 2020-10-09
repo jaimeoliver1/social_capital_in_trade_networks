@@ -1,15 +1,18 @@
+import os
 import networkx as nx
 import pandas as pd
 
 class MigrationNetworkCreation:
         
 
-    def __init__(self, year=2015):
+    def __init__(self, year: str, input_filepath: str, output_filepath: str):
         self.year=year
-        
+        self.input_filepath=input_filepath
+        self.output_filepath=output_filepath
+
     def oecd_matrix_ingestion(self):
-        
-        self.df = pd.read_csv('s3://workspaces-clarity-mgmt-pro/jaime.oliver/jobs/value_chain/oecd/migration/MIG_12082020131505678.csv', low_memory=False)
+        data_path = os.path.join(self.input_filepath, 'MIG_12082020131505678.csv')
+        self.df = pd.read_csv(data_path, low_memory=False, dtype={'Year':str})
         
         self.df = self.df[self.df['Variable'] == 'Inflows of foreign population by nationality']
         
@@ -19,13 +22,14 @@ class MigrationNetworkCreation:
         self.df.columns = ['country_from', 'country_to', 'weight']  
         
     def population_etl(self):
-        
-        df_working = pd.read_csv('s3://workspaces-clarity-mgmt-pro/jaime.oliver/jobs/value_chain/oecd/DP_LIVE_06072020184943320.csv')
+        data_path = os.path.join(self.input_filepath, 'DP_LIVE_06072020184943320.csv')
+        df_working = pd.read_csv(data_path, dtype={'TIME':str})
         df_working.rename(columns = {'LOCATION':'country','TIME':'year', 'Value':'pctg'}, inplace=True)
         df_working = df_working[['country', 'year', 'pctg']]
         df_working = df_working[df_working.year == self.year]
 
-        self.df_population = pd.read_csv('s3://workspaces-clarity-mgmt-pro/jaime.oliver/jobs/value_chain/oecd/DP_LIVE_06072020200357239.csv')
+        data_path = os.path.join(self.input_filepath, 'DP_LIVE_06072020200357239.csv')
+        self.df_population = pd.read_csv(data_path, dtype={'TIME':str})
 
         self.df_population = self.df_population[self.df_population.MEASURE == 'MLN_PER']
         self.df_population['Value'] = self.df_population['Value']*1e+6
@@ -52,7 +56,9 @@ class MigrationNetworkCreation:
         
     def map_row_countries(self):
         
-        df_countries = pd.read_parquet('///domino/datasets/jaime_oliver/industry_network/scratch/2015/gdp.parquet')
+        data_path = os.path.join(self.output_filepath, '2005', 'gdp.parquet')
+
+        df_countries = pd.read_parquet(data_path)
 
         missing_countries = (set(self.df.country_from) or set(self.df.country_to)) - set(df_countries.index)
 
@@ -61,7 +67,6 @@ class MigrationNetworkCreation:
 
         self.df = self.df.groupby(['country_from', 'country_to']).sum().reset_index()
         
-        #self.df['weight'] = self.df['weight'].astype(int)
         self.df = self.df.dropna()
 
     def create_network(self):

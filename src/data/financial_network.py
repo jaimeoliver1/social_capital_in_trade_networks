@@ -1,3 +1,7 @@
+import os
+
+from pathlib import Path
+
 from dask.distributed import Client
 import dask.array as da
 
@@ -9,13 +13,15 @@ import datetime
 
 class IndustryNetworkCreation:
 
-    def __init__(self, year=2015):
+    def __init__(self, year: str, input_filepath: str, output_filepath: str):
         self.year=year
+        self.input_filepath=input_filepath
+        self.output_filepath=output_filepath
 
-    def oecd_matrix_ingestion(self, by_country=False):
+    def oecd_matrix_ingestion(self):
         # Read data
-        df = pd.read_csv(f"s3://workspaces-clarity-mgmt-pro/jaime.oliver/jobs/value_chain/oecd/input_output/ICIO2018_{self.year}.zip", compression='zip'
-        ).set_index("Unnamed: 0")
+        data_path = os.path.join(self.input_filepath,f'ICIO2018_{self.year}.zip')
+        df = pd.read_csv(data_path, compression='zip').set_index("Unnamed: 0")
         demand_vars = ["HFCE", "NPISH", "GGFC", "GFCF", "INVNT", "P33"]
         supply_vars = ["TAXSUB", "VALU", "OUTPUT","TOTAL"]
         
@@ -28,9 +34,8 @@ class IndustryNetworkCreation:
             new_columns = [c.replace(k, v) for c in new_columns]
             new_index = [c.replace(k, v) for c in new_index]
 
-        if by_country:
-            new_columns = [c[:3] if c.split('_')[-1] not in demand_vars + supply_vars else c for c in new_columns]
-            new_index = [c[:3] if c.split('_')[-1] not in demand_vars + supply_vars else c for c in new_index]
+        new_columns = [c[:3] if c.split('_')[-1] not in demand_vars + supply_vars else c for c in new_columns]
+        new_index = [c[:3] if c.split('_')[-1] not in demand_vars + supply_vars else c for c in new_index]
 
         df.columns = new_columns
         df.index = new_index
@@ -87,74 +92,33 @@ class IndustryNetworkCreation:
         # Normalisation by inputs (columns) + value added
         self.A = self.Z/self.x
         
-        # Leontief inverse matrix
-        self.L = np.linalg.inv(np.eye(len(self.A)) - self.A) 
-
         # value added per unit output -- 0 value added if no value added is computed
         self.value_added_per_output_unit =  self.w / self.x
 
-        # Final industry contribution to demand
-        self.value_adjusted_L = np.dot(np.diag(self.value_added_per_output_unit), self.L)
-
-    def downstream_chain(self):
-        
-        # Normalisation by outputs (rows) + consumption
-        self.B = self.Z/self.x[:,None]
-        
-        # Ghosh inverse matrix
-        self.G_T = np.linalg.inv(np.eye(len(self.B)) - self.B.T) 
-
-        # Consumption per unit output
-        self.consumption_per_output_unit =  self.f / self.x
-
-    def save_to_s3(self, execution_date, save_path = 's3://workspaces-clarity-mgmt-pro/jaime.oliver/jobs/value_chain/'):
+    def save(self):
         ############################################################################################
         # Save absorbing markov chain in format: absorbtion probabilities, transition matrix
         ############################################################################################
         # Outputs -------------------------------
+        data_path = os.path.join(self.output_filepath, self.year,'industry_output.parquet')
         df_output = pd.DataFrame({'output':self.x}, index=self.node_index)
-        df_output.to_parquet(f"{save_path}{execution_date}/industry_output.parquet")
+        df_output.to_parquet(data_path)
 
         # GDP
+        data_path = os.path.join(self.output_filepath, self.year,'gdp.parquet')
         df_gdp = pd.DataFrame({'gdp':self.w}, index=self.node_index)
-        df_gdp.to_parquet(f"{save_path}{execution_date}/gdp.parquet")
+        df_gdp.to_parquet(data_path)
         
         # Upstream chain -------------------------------------------------
         # Absobtion probabilities
+        data_path = os.path.join(self.output_filepath, self.year,'industry_value_added.parquet')
         df_value_added = pd.DataFrame(
             {"value_added": self.value_added_per_output_unit}, index=self.node_index
         )
-        df_value_added.to_parquet(f"{save_path}{execution_date}/industry_value_added.parquet")
-        
-        # Transition matrix
-        df_A = pd.DataFrame(
-            self.A, columns=self.node_index, index=self.node_index
-        )
-        df_A.to_parquet(f"{save_path}{execution_date}/industry_A.parquet")
-
-        # Final industry contribution to demand
-        df_L = pd.DataFrame(self.value_adjusted_L, columns=self.node_index, index=self.node_index)
-        df_L.to_parquet(f"{save_path}{execution_date}/value_adjusted_L.parquet")
-
-        # Downstream chain -------------------------------------------------
-        # Absobtion probabilities
-        df_consumption = pd.DataFrame(
-            {"value_added": self.consumption_per_output_unit}, index=self.node_index
-        )
-        df_consumption.to_parquet(f"{save_path}{execution_date}/industry_consumption.parquet")
-        
-        # Transition matrix
-        df_B = pd.DataFrame(
-            self.B.T, columns=self.node_index, index=self.node_index
-        )
-        df_B.to_parquet(f"{save_path}{execution_date}/industry_B.parquet")
-        
+        df_value_added.to_parquet(data_path)
+    
     def run(self):
 
         self.oecd_matrix_ingestion()
 
         self.upstream_chain()
-        
-        self.downstream_chain()
-
-        self.save_to_s3(execution_date=datetime.date.today())

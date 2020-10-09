@@ -20,6 +20,7 @@ class ETL:
 
         for year in range(2005, 2016):
             
+            year = str(year)
             # Capital network --------------------------------------------
             network_path = os.path.join(self.output_filepath, year, 'A_country.graphml')
             G = nx.readwrite.graphml.read_graphml(network_path)
@@ -42,11 +43,11 @@ class ETL:
             df['human_hhi'] = df.index.map(nx.get_node_attributes(G,'hhi_index'))
             
             # Compile ---------------------------
-            out_path = os.path.join(self.output_filepath, year, 'industry_outputs.parquet')
+            out_path = os.path.join(self.output_filepath, year, 'industry_output.parquet')
             df_out=pd.read_parquet(out_path)
             df_year = df.merge(df_out, left_index=True, right_index=True)
 
-            gdp_path = fos.path.join(self.output_filepath, year, 'gdp.parquet')
+            gdp_path = os.path.join(self.output_filepath, year, 'gdp.parquet')
             df_gdp=pd.read_parquet(gdp_path)
             df_year = df_year.merge(df_gdp, left_index=True, right_index=True)
             
@@ -106,7 +107,7 @@ class ETL:
         df_totals['country'] = df_totals['country'].map(lambda x: x[:3])
         df_totals['log_GFCF'] = df_totals['GFCF'].map(lambda x: np.log(x + 1))
             
-        df_totals['year'] = year
+        df_totals['year'] = str(year)
         
         return df_totals
         
@@ -130,14 +131,14 @@ class ETL:
         return df
         
     def population_etl(self):
-        
+
         data_path = os.path.join(self.input_filepath, 'DP_LIVE_06072020184943320.csv')
-        df_working = pd.read_csv(data_path)
+        df_working = pd.read_csv(data_path, dtype={'TIME':str})
         df_working.rename(columns = {'LOCATION':'country','TIME':'year', 'Value':'pctg'}, inplace=True)
         df_working = df_working[['country', 'year', 'pctg']]
 
         data_path = os.path.join(self.input_filepath, 'DP_LIVE_06072020200357239.csv')
-        df_population = pd.read_csv(data_path)
+        df_population = pd.read_csv(data_path, dtype={'TIME':str})
 
         df_population = df_population[df_population.MEASURE == 'MLN_PER']
         df_population = df_population[df_population.SUBJECT == 'TOT']
