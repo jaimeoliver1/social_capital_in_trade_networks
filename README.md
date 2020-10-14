@@ -3,6 +3,13 @@ social_capital_in_trade_networks
 
 This repo contains the code for the study
 
+Data Sources 
+------------
+The following raw datasets are use in this work: 
+- DP_LIVE_13102020161705689.csv: Gini coefficient - https://data.oecd.org/inequality/income-inequality.htm
+- ICIO2018_20**.zip: Inter-Country Input Output (ICIO) tables - http://www.oecd.org/sti/ind/inter-country-input-output-tables.htm
+- MIG_12082020131505678.csv : International migration database - https://stats.oecd.org/Index.aspx?DataSetCode=MIG
+
 Project Organization
 ------------
 

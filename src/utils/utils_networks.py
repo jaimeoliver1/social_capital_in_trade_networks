@@ -1,5 +1,6 @@
 import networkx as nx
 import numpy as np
+import os
 
 def favor_centrality(G, tol=0.0001):
 
@@ -14,7 +15,7 @@ def favor_centrality(G, tol=0.0001):
 
     return dict(zip(G, favor_centrality_list)) 
 
-def bridging_centrality(G, p=1, T=3):
+def bridging_centrality(G, p=1, T=10):
 
     if len(G) == 0:
         raise nx.NetworkXPointlessConcept('cannot compute centrality for the null graph')
@@ -40,7 +41,7 @@ def bridging_centrality(G, p=1, T=3):
     return dict(zip(G, bridging_centrality_list))
 
     
-def godfhater_index(G, tol=1.0e-6):
+def godfhater_index(G, tol=1.0e-10):
 
     if len(G) == 0:
         raise nx.NetworkXPointlessConcept('cannot compute centrality for the null graph')
@@ -62,6 +63,9 @@ def godfhater_index(G, tol=1.0e-6):
 
     return dict(zip(G, godfhater_index_list))
 
+
+def average_degree(G, weight='weight'):
+    return sum(dict(G.degree(weight='weight')).values())/float(len(G))
 
 def global_efficiency(G, weight='weight'):
     """Returns the average global efficiency of the graph.
@@ -95,7 +99,6 @@ def global_efficiency(G, weight='weight'):
            "Efficient behavior of small-world networks."
            *Physical Review Letters* 87.19 (2001): 198701.
            <https://doi.org/10.1103/PhysRevLett.87.198701>
-
     """
     if nx.is_negatively_weighted(G, weight=weight):
         raise nx.NetworkXError("edge weights must be positive")
@@ -126,7 +129,15 @@ def global_efficiency(G, weight='weight'):
         
     return g_eff
 
-
-
-
+def network_years_generator(output_filepath, network):
+    '''
+    Generator of the sequence of networks over the years
+    '''
+    all_years = []
+    for y in range(2005, 2016):
+        network_path = os.path.join(output_filepath, str(y), f'{network}.graphml')
+        G = nx.readwrite.graphml.read_graphml(network_path)
         
+        all_years.append(G)
+        
+    return all_years

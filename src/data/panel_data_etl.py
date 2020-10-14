@@ -4,7 +4,7 @@ import networkx as nx
 import numpy as np
 from sklearn.preprocessing import PowerTransformer
 
-class ETL:
+class PanelDataETL:
     
     def __init__(self,input_filepath, output_filepath):
         
@@ -164,19 +164,35 @@ class ETL:
 
         return df_population
 
+    def gini_etl(self):
+
+        data_path = os.path.join(self.input_filepath, 'DP_LIVE_13102020161705689.csv')
+        df_gini = pd.read_csv(data_path, dtype={'TIME':str})
+        
+        df_gini = df_gini[df_gini.SUBJECT == 'GINI']
+
+        df_gini = df_gini[['LOCATION', 'TIME', 'Value']]
+        df_gini.columns = ['country', 'year', 'gini']
+
+        return df_gini
+
     def run(self):
 
         self.networks_etl()
         df_net = self.feature_computation()
-        
         df_gfcf =  self.get_all_years_gross_capital_formation()
-        
+        df_model = df_net.merge(df_gfcf, how='left')
+    
         df_population = self.population_etl()
-
-        df_model = df_net.merge(df_gfcf, how='inner')
-        df_model = df_population.merge(df_model, how='inner', left_on=['country', 'year'], right_on = ['country', 'year'])
+        df_model = df_population.merge(df_model, how='left', left_on=['country', 'year'], right_on = ['country', 'year'])
+        
+        df_gini = self.gini_etl()
+        df_model = df_gini.merge(df_model, how='left', left_on=['country', 'year'], right_on = ['country', 'year'])
 
         df_model['constant'] = 1
+
+        df_model.year = df_model.year.astype(int)
+        df_model.query('year <= 2015 & year >=2005', inplace=True)
 
         print('countries lost: ', set(df_net.country) - set(df_population.country))
         return df_model

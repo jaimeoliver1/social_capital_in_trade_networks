@@ -11,7 +11,7 @@ import networkx as nx
 from src.utils.utils_features import NetworkFeatureComputation
 from src.data.financial_network import IndustryNetworkCreation
 from src.data.migration_network import MigrationNetworkCreation
-from src.data.etl import ETL
+from src.data.panel_data_etl import PanelDataETL
 
 @click.command()
 @click.argument("input_filepath", type=click.Path(exists=True))
@@ -51,7 +51,7 @@ def main(input_filepath, output_filepath):
 
         # Compute network features ------------------
         NFC = NetworkFeatureComputation(G)
-        NFC.compute_features(tol_favor=0.001)
+        NFC.compute_features(tol_favor=0.0001)
         G = NFC.G
 
         # Save
@@ -66,7 +66,7 @@ def main(input_filepath, output_filepath):
 
         # Compute network features
         NFC = NetworkFeatureComputation(MNC.G)
-        NFC.compute_features(tol_favor=0)
+        NFC.compute_features(tol_favor=1.e-11)
         G = NFC.G
 
         # Save
@@ -74,7 +74,7 @@ def main(input_filepath, output_filepath):
         Path(network_path).parent.mkdir(parents=True, exist_ok=True)
         nx.readwrite.graphml.write_graphml(G, network_path)
 
-    etl = ETL(input_filepath=input_filepath, output_filepath=output_filepath)
+    etl = PanelDataETL(input_filepath=input_filepath, output_filepath=output_filepath)
     df_model = etl.run()
 
     df_model.to_parquet(os.path.join(output_filepath, "panel_data.parquet"))
