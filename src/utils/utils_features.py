@@ -12,7 +12,7 @@ class NetworkFeatureComputation:
     def __init__(self, graph):
         self.G = graph
         
-    def compute_features(self, tol_favor):
+    def compute_features(self, tol_gfi, tol_favor):
         '''
         Compute graph features
         '''
@@ -32,7 +32,7 @@ class NetworkFeatureComputation:
         nx.set_node_attributes(self.G, h)
         nx.set_node_attributes(self.G, a)
         
-        gfi = godfhater_index(self.G, tol=0.01)
+        gfi = godfhater_index(self.G, tol=tol_gfi)
         gfi = {k:{'gfi':v} for k,v in gfi.items()}
         nx.set_node_attributes(self.G, gfi)     
         
