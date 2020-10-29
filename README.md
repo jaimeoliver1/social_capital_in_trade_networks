@@ -6,9 +6,12 @@ This repo contains the code for the study
 Data Sources 
 ------------
 The following raw datasets are use in this work: 
-- DP_LIVE_13102020161705689.csv: Gini coefficient - https://data.oecd.org/inequality/income-inequality.htm
 - ICIO2018_20**.zip: Inter-Country Input Output (ICIO) tables - http://www.oecd.org/sti/ind/inter-country-input-output-tables.htm
 - MIG_12082020131505678.csv : International migration database - https://stats.oecd.org/Index.aspx?DataSetCode=MIG
+- DP_LIVE_13102020161705689.csv: Gini coefficient - https://data.oecd.org/inequality/income-inequality.htm
+- DP_LIVE_06072020200357239.csv: Population - https://data.oecd.org/pop/population.htm
+- DP_LIVE_06072020184943320.csv: Working population expressed as a percentage of the country's total population - https://data.oecd.org/pop/working-age-population.htm#indicator-chart
+
 
 Project Organization
 ------------
