@@ -51,7 +51,7 @@ def main(input_filepath, output_filepath):
 
         # Compute network features ------------------
         NFC = NetworkFeatureComputation(G)
-        NFC.compute_features(tol_gfi=0.001, tol_favor=0.0001)
+        NFC.compute_features(tol_gfi=0.01, tol_favor=0.001)
         G = NFC.G
 
         # Save
@@ -66,7 +66,7 @@ def main(input_filepath, output_filepath):
 
         # Compute network features
         NFC = NetworkFeatureComputation(MNC.G)
-        NFC.compute_features(tol_gfi = 0.001, tol_favor=1.e-12)
+        NFC.compute_features(tol_gfi = 1.e-12, tol_favor=1.e-11)
         G = NFC.G
 
         # Save

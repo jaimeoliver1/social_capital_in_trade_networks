@@ -11,8 +11,8 @@ class PanelDataETL:
         self.input_filepath = input_filepath
         self.output_filepath = output_filepath
 
-        self.centralities = ['authorities','hubs', 'pagerank', 'betweenness_centrality', 'gfi', 'bridging', 'favor']
-        self.centralities = ['pagerank', 'gfi', 'bridging', 'favor']
+        self.centralities = ['authorities', 'hubs', 'pagerank', 'betweenness_centrality', 'gfi', 'bridging', 'favor']
+        #self.centralities = ['pagerank', 'gfi', 'bridging', 'favor']
 
     def networks_etl(self):
 
@@ -184,11 +184,12 @@ class PanelDataETL:
         df_model = df_net.merge(df_gfcf, how='left')
     
         df_population = self.population_etl()
-        df_model = df_population.merge(df_model, how='left', left_on=['country', 'year'], right_on = ['country', 'year'])
+        df_model = df_population.merge(df_model, how='right', left_on=['country', 'year'], right_on = ['country', 'year'])
         
         df_gini = self.gini_etl()
-        df_model = df_gini.merge(df_model, how='left', left_on=['country', 'year'], right_on = ['country', 'year'])
+        df_model = df_gini.merge(df_model, how='right', left_on=['country', 'year'], right_on = ['country', 'year'])
 
+        df_model.dropna(subset = ['population'], inplace=True)
         df_model['constant'] = 1
 
         df_model.year = df_model.year.astype(int)

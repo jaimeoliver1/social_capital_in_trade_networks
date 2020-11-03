@@ -25,7 +25,8 @@ def main(notebooks_filepath, data_filepath):
         "05_NetworkEfficiency.ipynb",
         "06_ECI_correlation.ipynb",
         "07_diversity_orthogonality.ipynb",
-        "08_dynamic_range_centralities.ipynb"                            
+        "08_dynamic_range_centralities.ipynb",
+        "09_correlation_structure.ipynb"                        
     ]
     for n in notebook_list:
 
