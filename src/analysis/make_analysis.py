@@ -32,8 +32,8 @@ def main(notebooks_filepath, data_filepath):
 
         pm.execute_notebook(os.path.join(notebooks_filepath, n), 
                             os.path.join(notebooks_filepath, 'runs', n), 
-                            parameters=dict(output_filepath=data_filepath)
-                            )
+                            parameters=dict(output_filepath=data_filepath),
+                            kernel_name='social_capital_in_trade_networks')
 
 if __name__ == "__main__":
     log_fmt = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
