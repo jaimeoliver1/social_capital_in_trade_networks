@@ -10,7 +10,10 @@ The following raw datasets are use in this work:
 - MIG_12082020131505678.csv : International migration database - https://stats.oecd.org/Index.aspx?DataSetCode=MIG
 - DP_LIVE_13102020161705689.csv: Gini coefficient - https://data.oecd.org/inequality/income-inequality.htm
 - DP_LIVE_06072020200357239.csv: Population - https://data.oecd.org/pop/population.htm
-- DP_LIVE_06072020184943320.csv: Working population expressed as a percentage of the country's total population - https://data.oecd.org/pop/working-age-population.htm#indicator-chart
+- DP_LIVE_06072020184943320.csv: Working population expressed as a percentage of the country's total population - https://data.oecd.org/pop/working-age-population.
+- API_NE.GDI.TOTL.CD_DS2_en_excel_v2_1742937.xls: Gross capital formation (current US$) from World Bank database - https://data.worldbank.org/indicator/NE.GDI.TOTL.CD?page=1 
+
+htm#indicator-chart
 
 
 Project Organization
