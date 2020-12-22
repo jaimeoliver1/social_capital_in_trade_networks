@@ -2,14 +2,76 @@ import os
 
 from pathlib import Path
 
-from dask.distributed import Client
-import dask.array as da
-
 import pandas as pd
 import numpy as np
 
 import datetime
 
+
+class IndustryNetworkCreationEORA:
+
+    def __init__(self, year: str, input_filepath: str, output_filepath: str):
+
+        if year == '2016':
+            self.year='2015'
+        else:
+            self.year=year
+            
+        self.input_filepath='s3://workspaces-clarity-mgmt-pro/jaime.oliver/misc/EORA/'
+        self.output_filepath=output_filepath
+
+    def eora_matrix_ingestion(self):
+
+        self.data_path = os.path.join(self.input_filepath, f'Eora26_{self.year}_bp/')
+
+        self.df_labels = pd.read_table(os.path.join(self.data_path, 'labels_T.txt') , header=None)
+        self.df_labels.columns = ['country_name', 'country', 'type', 'industry', 'drop']
+
+        self.df_T = pd.read_table(os.path.join(self.data_path, f'Eora26_{self.year}_bp_T.txt'), header=None)
+        self.df_T.index = self.df_labels.country
+        self.df_T.columns = self.df_labels.country
+
+        self.w = pd.read_table(os.path.join(self.data_path, f'Eora26_{self.year}_bp_VA.txt'), header=None)
+        self.w = self.w.sum(axis=0)
+        self.w = self.w.to_frame()
+        self.w.index = self.df_labels.country
+        self.w.columns = ['value_added']
+
+    def aggregate_by_country(self):
+
+        self.df_T = self.df_T.groupby(axis=1, level=0).sum()
+        self.df_T = self.df_T.groupby(level=0).sum()
+
+        self.w = self.w.groupby(by='country').sum()
+
+        self.node_index = self.df_T.index
+
+    def upstream_chain(self):
+
+        df_A = pd.concat([self.df_T, self.w.T]).apply(lambda x: x/x.sum())
+        self.A = df_A[:-1].values
+
+    def get_output(self):
+
+        x = pd.concat([self.df_T, self.w.T]).sum(axis=0)
+        self.df_output = pd.DataFrame({'OUTPUT':x}, index = self.node_index)
+        
+    def get_gdp(self):
+
+        self.df_gdp = self.w.copy()
+        self.df_gdp.columns = ['gdp']
+
+    def run(self):
+
+        self.eora_matrix_ingestion()
+
+        self.aggregate_by_country()
+
+        self.upstream_chain()
+
+        self.get_output()
+        
+        self.get_gdp()
 
 class IndustryNetworkCreation:
 
@@ -117,8 +179,20 @@ class IndustryNetworkCreation:
         )
         df_value_added.to_parquet(data_path)
     
+    def get_output(self):
+
+        self.df_output = pd.DataFrame({'OUTPUT':self.x}, index=self.node_index)
+
+    def get_gdp(self):
+
+        self.df_gdp = pd.DataFrame({'gdp':self.w}, index=self.node_index)
+
     def run(self):
 
         self.oecd_matrix_ingestion()
 
         self.upstream_chain()
+
+        self.get_output()
+
+        self.get_gdp()

@@ -11,14 +11,13 @@ class PanelDataETL:
         self.input_filepath = input_filepath
         self.output_filepath = output_filepath
 
-        self.centralities = ['authorities', 'hubs', 'pagerank', 'betweenness_centrality', 'gfi', 'bridging', 'favor']
-        #self.centralities = ['pagerank', 'gfi', 'bridging', 'favor']
+        self.centralities = ['pagerank', 'gfi', 'bridging', 'favor']
 
     def networks_etl(self):
 
         all_years = []
 
-        for year in range(2005, 2016):
+        for year in range(2000, 2019):
             
             year = str(year)
             # Capital network --------------------------------------------
@@ -113,15 +112,15 @@ class PanelDataETL:
         
     def get_all_years_gross_capital_formation(self):
     
-        all_years = []
-        for y in range(2005, 2016):
-            df_year = self.run_one_year_gross_capital_formation(year=y)
-            
-            all_years.append(df_year)
-            
-        
-        df = pd.concat(all_years, axis=0)
-        
+        # Gross capital formation (current US$)
+        data_path = os.path.join(self.input_filepath, 'API_NE.GDI.TOTL.CD_DS2_en_excel_v2_1742937.xls')
+        df = pd.read_excel(data_path, skiprows=3)
+        df.set_index('Country Code', inplace=True)
+        df = df[[str(s) for s in range(2000, 2019)]].stack().reset_index()
+        df.columns = ['country', 'year', 'GFCF']
+
+        # Log
+        df['log_GFCF'] = df['GFCF'].map(lambda x: np.log(x + 1))
         
         # Compute lags and deltas
         df = df.sort_values(by=['country', 'year'])
@@ -193,7 +192,7 @@ class PanelDataETL:
         df_model['constant'] = 1
 
         df_model.year = df_model.year.astype(int)
-        df_model.query('year <= 2015 & year >=2005', inplace=True)
+        df_model.query('year <= 2018 & year >=2000', inplace=True)
 
-        print('countries lost: ', set(df_net.country) - set(df_population.country))
+        print('countries lost because of population missing: ', set(df_net.country) - set(df_population.country))
         return df_model

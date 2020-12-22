@@ -9,7 +9,7 @@ import pandas as pd
 import networkx as nx
 
 from src.utils.utils_features import NetworkFeatureComputation
-from src.data.financial_network import IndustryNetworkCreation
+from src.data.financial_network import IndustryNetworkCreation, IndustryNetworkCreationEORA
 from src.data.migration_network import MigrationNetworkCreation
 from src.data.panel_data_etl import PanelDataETL
 
@@ -23,41 +23,41 @@ def main(input_filepath, output_filepath):
     logger = logging.getLogger(__name__)
     logger.info("making final data set from raw data")
 
-    for year in range(2005, 2016):
+    for year in range(2000, 2019):
+        
         year = str(year)
         print("Processing year ", year)
-
+        
         # Generate networks -------------------------
         # Capital Network
-        INC = IndustryNetworkCreation(
+        INC = IndustryNetworkCreationEORA(
             year=year, input_filepath=input_filepath, output_filepath=output_filepath
         )
         INC.run()
 
+        #Output
         data_path = os.path.join(output_filepath, year, "industry_output.parquet")
         Path(data_path).parent.mkdir(parents=True, exist_ok=True)
-        df_out = pd.DataFrame(INC.x, index=INC.node_index, columns=["OUTPUT"])
-        df_out.to_parquet(data_path)
+        INC.df_output.to_parquet(data_path)
 
         # GDP
         data_path = os.path.join(output_filepath, year, "gdp.parquet")
-        df_gdp = pd.DataFrame(INC.w, index=INC.node_index, columns=["gdp"])
-        df_gdp.to_parquet(data_path)
+        INC.df_gdp.to_parquet(data_path)
 
-        # Save transition matrix
+        # Graph representation
         adj_matrix = INC.A.T  # REMEMBER: io tables are transposed adj matrix
         df_adj = pd.DataFrame(adj_matrix, index=INC.node_index, columns=INC.node_index)
         G = nx.convert_matrix.from_pandas_adjacency(df_adj, create_using=nx.DiGraph)
 
         # Compute network features ------------------
         NFC = NetworkFeatureComputation(G)
-        NFC.compute_features(tol_gfi=0.01, tol_favor=0.001)
+        NFC.compute_features(tol_gfi=0.01, tol_favor=0.0001)
         G = NFC.G
 
         # Save
         network_path = os.path.join(output_filepath, year, "A_country.graphml")
         nx.readwrite.graphml.write_graphml(G, network_path)
-
+        
         # Migration Network --------------------------------------
         MNC = MigrationNetworkCreation(
             year=year, input_filepath=input_filepath, output_filepath=output_filepath
@@ -66,7 +66,7 @@ def main(input_filepath, output_filepath):
 
         # Compute network features
         NFC = NetworkFeatureComputation(MNC.G)
-        NFC.compute_features(tol_gfi = 1.e-12, tol_favor=1.e-11)
+        NFC.compute_features(tol_gfi = 0.00001, tol_favor=1e-13)
         G = NFC.G
 
         # Save

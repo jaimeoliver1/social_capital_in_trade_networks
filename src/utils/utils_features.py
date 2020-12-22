@@ -18,19 +18,9 @@ class NetworkFeatureComputation:
         '''
         self.df = pd.DataFrame(list(self.G.nodes), columns=['country_industry'])
         
-        betweenness_centrality_dict = nx.betweenness_centrality(self.G, k = min((len(self.G.nodes), 100)))
-        betweenness_centrality_dict = {k:{'betweenness_centrality':v} for k,v in betweenness_centrality_dict.items()}
-        nx.set_node_attributes(self.G, betweenness_centrality_dict)
-          
         pagerank_dict = nx.pagerank(self.G)
         pagerank_dict = {k:{'pagerank':v} for k,v in pagerank_dict.items()}
         nx.set_node_attributes(self.G, pagerank_dict)
-        
-        h,a=nx.hits(self.G, max_iter=300)
-        h = {k:{'hubs':v} for k,v in h.items()}
-        a = {k:{'authorities':v} for k,v in a.items()}
-        nx.set_node_attributes(self.G, h)
-        nx.set_node_attributes(self.G, a)
         
         gfi = godfhater_index(self.G, tol=tol_gfi)
         gfi = {k:{'gfi':v} for k,v in gfi.items()}
@@ -50,6 +40,4 @@ class NetworkFeatureComputation:
         hhi_index = np.square(g/g.sum(axis=1)[:,None]).sum(axis=1)   
         hhi_index = dict(zip(self.G.nodes(), hhi_index))
         hhi_index = {k:{'hhi_index':hhi_index_i} for k, hhi_index_i in hhi_index.items()}
-        nx.set_node_attributes(self.G, hhi_index)  
-
-        
+        nx.set_node_attributes(self.G, hhi_index)
