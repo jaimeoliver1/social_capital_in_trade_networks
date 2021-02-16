@@ -134,7 +134,7 @@ def network_years_generator(output_filepath, network):
     Generator of the sequence of networks over the years
     '''
     all_years = []
-    for y in range(2005, 2016):
+    for y in range(2000, 2019):
         network_path = os.path.join(output_filepath, str(y), f'{network}.graphml')
         G = nx.readwrite.graphml.read_graphml(network_path)
         

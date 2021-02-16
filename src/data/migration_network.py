@@ -22,30 +22,17 @@ class MigrationNetworkCreation:
         self.df.columns = ['country_from', 'country_to', 'weight']  
         
     def population_etl(self):
-        data_path = os.path.join(self.input_filepath, 'DP_LIVE_06072020184943320.csv')
-        df_working = pd.read_csv(data_path, dtype={'TIME':str})
-        df_working.rename(columns = {'LOCATION':'country','TIME':'year', 'Value':'pctg'}, inplace=True)
-        df_working = df_working[['country', 'year', 'pctg']]
-        df_working = df_working[df_working.year == self.year]
 
-        data_path = os.path.join(self.input_filepath, 'DP_LIVE_06072020200357239.csv')
-        self.df_population = pd.read_csv(data_path, dtype={'TIME':str})
+        data_path = os.path.join(self.input_filepath, 'API_SL.TLF.TOTL.IN_DS2_en_csv_v2_1929128.csv')
+        df_population = pd.read_csv(data_path, skiprows=4)
+        df_population.drop(columns=['Country Name','Indicator Name', 'Indicator Code'], inplace=True)
 
-        self.df_population = self.df_population[self.df_population.MEASURE == 'MLN_PER']
-        self.df_population['Value'] = self.df_population['Value']*1e+6
-        
-        self.df_population = self.df_population[self.df_population.SUBJECT == 'TOT']
+        df_population = df_population.set_index(['Country Code']).stack().reset_index()
+        df_population.columns = ['country', 'year','wkn_population']
 
-        self.df_population = self.df_population[self.df_population.TIME == self.year]
-        self.df_population = self.df_population[['LOCATION', 'Value']]
+        self.df_population = df_population[df_population.year == self.year]
 
-        self.df_population.columns = ['country', 'population']
-
-        self.df_population = self.df_population.merge(df_working, how='left', on = ['country'])
-
-        self.df_population['wkn_population'] = self.df_population['population']*self.df_population['pctg']
-        self.df_population = self.df_population[['country', 'wkn_population']]
-
+        self.df_population = self.df_population[['country','wkn_population']]
 
     def normalise_by_procedence(self):
         
@@ -56,7 +43,7 @@ class MigrationNetworkCreation:
         
     def map_row_countries(self):
         
-        data_path = os.path.join(self.output_filepath, '2005', 'gdp.parquet')
+        data_path = os.path.join(self.output_filepath, '2000', 'gdp.parquet')
 
         df_countries = pd.read_parquet(data_path)
 

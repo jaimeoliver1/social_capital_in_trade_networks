@@ -131,6 +131,7 @@ class PanelDataETL:
         
     def population_etl(self):
 
+        ''' OECD ETL 
         data_path = os.path.join(self.input_filepath, 'DP_LIVE_06072020184943320.csv')
         df_working = pd.read_csv(data_path, dtype={'TIME':str})
         df_working.rename(columns = {'LOCATION':'country','TIME':'year', 'Value':'pctg'}, inplace=True)
@@ -150,14 +151,26 @@ class PanelDataETL:
         df_population = df_population.merge(df_working, how='left', on = ['country', 'year'])
 
         df_population['wkn_population'] = df_population['population']*df_population['pctg']
+    
+        df_population = df_population.sort_values(by=['country', 'year'])
 
         df_population['log_population'] = df_population['population'].map(lambda x: np.log(x + 1))
+        df_population['lag_log_population'] = df_population.groupby('country').log_population.shift(1)
+        df_population['delta_log_population'] = df_population['log_population'] - df_population['lag_log_population']
+        '''
+
+        data_path = os.path.join(self.input_filepath, 'API_SL.TLF.TOTL.IN_DS2_en_csv_v2_1929128.csv')
+        df_population = pd.read_csv(data_path, skiprows=4)
+        df_population.drop(columns=['Country Name','Indicator Name', 'Indicator Code'], inplace=True)
+
+        df_population = df_population.set_index(['Country Code']).stack().reset_index()
+
+        df_population.columns = ['country', 'year','wkn_population']
+
         df_population['log_wkn_population'] = df_population['wkn_population'].map(lambda x: np.log(x + 1))
 
         # Compute lags and deltas
         df_population = df_population.sort_values(by=['country', 'year'])
-        df_population['lag_log_population'] = df_population.groupby('country').log_population.shift(1)
-        df_population['delta_log_population'] = df_population['log_population'] - df_population['lag_log_population']
         df_population['lag_log_wkn_population'] = df_population.groupby('country').log_wkn_population.shift(1)
         df_population['delta_log_wkn_population'] = df_population['log_wkn_population'] - df_population['lag_log_wkn_population']
 
@@ -188,7 +201,7 @@ class PanelDataETL:
         df_gini = self.gini_etl()
         df_model = df_gini.merge(df_model, how='right', left_on=['country', 'year'], right_on = ['country', 'year'])
 
-        df_model.dropna(subset = ['population'], inplace=True)
+        df_model.dropna(subset = ['wkn_population', 'human_gfi'], inplace=True)
         df_model['constant'] = 1
 
         df_model.year = df_model.year.astype(int)
