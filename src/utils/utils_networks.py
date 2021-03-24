@@ -50,7 +50,7 @@ def godfhater_index(G, tol=1.0e-10):
     g = nx.linalg.graphmatrix.adjacency_matrix(G).toarray()
     
     godfhater_index_list = []
-    for index, node in enumerate(G.nodes):
+    for index, _ in enumerate(G.nodes):
         prod = np.tensordot(g[:,index],g[:,index], axes = 0)
         prod_k_bigger_than_j = np.tril(prod,k=-1)
         

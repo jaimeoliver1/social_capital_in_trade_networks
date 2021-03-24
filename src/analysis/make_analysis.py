@@ -18,7 +18,8 @@ def main(notebooks_filepath, data_filepath):
     logger.info("Executing all analysis notebooks")
 
     notebook_list = [
-        "01_social_capital_regression_analysis.ipynb", 
+        "01_01_linear_models_social_capital.ipynb", 
+        "01_02_non_linear_regression_models.ipynb",
         "02_PowerlawDistribution.ipynb",
         "03_tSNE_representations.ipynb",
         "04_NetworkDescripiton.ipynb",
