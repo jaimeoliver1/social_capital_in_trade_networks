@@ -90,3 +90,7 @@ target/
 
 # Notebook runs
 /notebooks/runs/
+
+# files
+*.zip
+*.csv
