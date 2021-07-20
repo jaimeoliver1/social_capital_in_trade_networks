@@ -18,6 +18,12 @@ class NetworkFeatureComputation:
         '''
         self.df = pd.DataFrame(list(self.G.nodes), columns=['country_industry'])
         
+        h,a=nx.hits(self.G, max_iter=500)
+        h = {k:{'hubs':v} for k,v in h.items()}
+        a = {k:{'authorities':v} for k,v in a.items()}
+        nx.set_node_attributes(self.G, h)
+        nx.set_node_attributes(self.G, a)
+
         pagerank_dict = nx.pagerank(self.G)
         pagerank_dict = {k:{'pagerank':v} for k,v in pagerank_dict.items()}
         nx.set_node_attributes(self.G, pagerank_dict)

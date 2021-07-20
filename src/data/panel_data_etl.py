@@ -11,7 +11,7 @@ class PanelDataETL:
         self.input_filepath = input_filepath
         self.output_filepath = output_filepath
 
-        self.centralities = ['pagerank', 'gfi', 'bridging', 'favor']
+        self.centralities = ['hubs', 'authorities', 'pagerank', 'gfi', 'bridging', 'favor']
 
     def networks_etl(self):
 
@@ -31,6 +31,14 @@ class PanelDataETL:
                 
             df['financial_hhi'] = df.index.map(nx.get_node_attributes(G,'hhi_index'))
 
+            # Goods network --------------------------------------------
+            network_path = os.path.join(self.output_filepath, year, 'B_country.graphml')
+            G = nx.readwrite.graphml.read_graphml(network_path)
+
+            for c in self.centralities:
+                df['goods_'+c] = df.index.map(nx.get_node_attributes(G,c))
+                
+            df['goods_hhi'] = df.index.map(nx.get_node_attributes(G,'goods_index'))
 
             # Migration network ---------------------------------------------
             network_path = os.path.join(self.output_filepath, year, 'migration_network.graphml')
@@ -77,6 +85,7 @@ class PanelDataETL:
 
 
         all_centrality_cols = ['financial_'+c for c in self.centralities]
+        all_centrality_cols += ['goods_'+c for c in self.centralities]
         all_centrality_cols += ['human_'+c for c in self.centralities]
         
         for c in all_centrality_cols + ['log_output', 'log_gdp']:
@@ -88,7 +97,7 @@ class PanelDataETL:
         self.df['lag_log2_gdp'] = self.df.groupby('country').log_gdp.shift(2)
         
         
-        self.df = self.power_tansformation(df = self.df, columns = all_centrality_cols)
+        #self.df = self.power_tansformation(df = self.df, columns = all_centrality_cols)
         
         return self.df
 

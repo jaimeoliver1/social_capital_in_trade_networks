@@ -37,12 +37,19 @@ class IndustryNetworkCreationEORA:
         self.w.index = self.df_labels.country
         self.w.columns = ['value_added']
 
+        self.f = pd.read_table(os.path.join(self.data_path, f'Eora26_{self.year}_bp_FD.txt'), header=None)
+        self.f = self.f.sum(axis=1)
+        self.f = self.f.to_frame()
+        self.f.index = self.df_labels.country
+        self.f.columns = ['final_demand']
+
     def aggregate_by_country(self):
 
         self.df_T = self.df_T.groupby(axis=1, level=0).sum()
         self.df_T = self.df_T.groupby(level=0).sum()
 
         self.w = self.w.groupby(by='country').sum()
+        self.f = self.f.groupby(by='country').sum()      
 
         self.node_index = self.df_T.index
 
@@ -50,6 +57,12 @@ class IndustryNetworkCreationEORA:
 
         df_A = pd.concat([self.df_T, self.w.T]).apply(lambda x: x/x.sum())
         self.A = df_A[:-1].values
+
+    def downstream_chain(self):
+
+        df_B_T = pd.concat([self.df_T.T, self.f.T]).apply(lambda x: x/x.sum())
+        B_T = df_B_T[:-1].values
+        self.B = B_T.T
 
     def get_output(self):
 
@@ -68,6 +81,8 @@ class IndustryNetworkCreationEORA:
         self.aggregate_by_country()
 
         self.upstream_chain()
+
+        self.downstream_chain()
 
         self.get_output()
         
