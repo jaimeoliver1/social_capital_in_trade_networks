@@ -275,7 +275,7 @@ sphinxcontrib-websupport==1.1.2
 spyder==3.3.6
 spyder-kernels==0.5.1
 SQLAlchemy==1.3.8
--e git+git@github-social_capital_in_trade_networks:jaimeoliver1/social_capital_in_trade_networks.git@f1200111e2e0ea7c325f0b38a2a48e76f1ab44cc#egg=src
+-e .
 statsmodels==0.12.0
 stevedore==3.2.2
 stop-words==2018.7.23
