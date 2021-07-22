@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+from urllib.parse import urlparse
 import click
 import logging
 from pathlib import Path
@@ -37,8 +38,8 @@ def network_from_adjacency(adjacency_matrix,
         write_s3_graphml(G, bucket, network_path)
 
 @click.command()
-@click.argument("input_filepath", type=click.Path(exists=True))
-@click.argument("output_filepath", type=click.Path())
+@click.argument("input_filepath")
+@click.argument("output_filepath")
 def main(input_filepath, output_filepath):
     """Runs data processing scripts to turn raw data from (../raw) into
     cleaned data ready to be analyzed (saved in ../processed).
@@ -46,8 +47,9 @@ def main(input_filepath, output_filepath):
     logger = logging.getLogger(__name__)
     logger.info("making final data set from raw data")
 
-    bucket='workspaces-clarity-mgmt-pro'
-    s3_path='jaime.oliver/misc/social_capital/data/'
+    o = urlparse(output_filepath, allow_fragments=False)
+    bucket=o.netloc
+    s3_path=o.path
 
     for year in range(2000, 2019):
 
@@ -99,7 +101,6 @@ def main(input_filepath, output_filepath):
 
         # Output
         data_path = os.path.join(output_filepath, year, "industry_output.parquet")
-        Path(data_path).parent.mkdir(parents=True, exist_ok=True)
         INC.df_output.to_parquet(data_path)
 
         # GDP
