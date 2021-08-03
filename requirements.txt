@@ -117,7 +117,7 @@ sphinxcontrib-htmlhelp==1.0.3
 sphinxcontrib-jsmath==1.0.1
 sphinxcontrib-qthelp==1.0.3
 sphinxcontrib-serializinghtml==1.1.4
--e git+git@github.com:jaimeoliver1/social_capital_in_trade_networks.git@f1f6e7e453fd89024877514ad09530cda3782d84#egg=src
+-e .
 statsmodels==0.12.0
 stevedore==3.2.2
 tblib==1.7.0
