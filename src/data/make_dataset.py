@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import os
-from urllib.parse import urlparse
 import click
 import logging
 from pathlib import Path
@@ -22,8 +21,7 @@ from src.utils.utils_s3 import read_s3_graphml, write_s3_graphml
 
 def network_from_adjacency(adjacency_matrix, 
                            node_index, 
-                           bucket,
-                           network_path, 
+                           path, 
                            tol_gfi=0.01, 
                            tol_favor=0.0001):
         df_adj = pd.DataFrame(adjacency_matrix, index=node_index, columns=node_index)
@@ -35,7 +33,7 @@ def network_from_adjacency(adjacency_matrix,
         G = NFC.G
 
         # Save
-        write_s3_graphml(G, bucket, network_path)
+        write_s3_graphml(G, path)
 
 @click.command()
 @click.argument("input_filepath")
@@ -46,10 +44,6 @@ def main(input_filepath, output_filepath):
     """
     logger = logging.getLogger(__name__)
     logger.info("making final data set from raw data")
-
-    o = urlparse(output_filepath, allow_fragments=False)
-    bucket=o.netloc
-    s3_path=o.path
 
     for year in range(2000, 2019):
 
@@ -111,15 +105,13 @@ def main(input_filepath, output_filepath):
         # Graph representation financial flows
         network_from_adjacency(adjacency_matrix=INC.A.T, # REMEMBER: io tables are transposed adj matrix
                                node_index=INC.node_index,                               
-                               bucket = bucket,
-                               network_path = os.path.join(s3_path, year, "A_country.graphml"),
+                               path = os.path.join(output_filepath, year, "A_country.graphml"),
                                tol_gfi=0.01,tol_favor=0.0001)
         
         # Graph representation goods and services flows
-        network_from_adjacency(adjacency_matrix=INC.B.T, # REMEMBER: io tables are transposed adj matrix
+        network_from_adjacency(adjacency_matrix=INC.B, 
                                node_index=INC.node_index,
-                               bucket = bucket,
-                               network_path = os.path.join(s3_path, year, "B_country.graphml"),
+                               path = os.path.join(output_filepath, year, "B_country.graphml"),
                                tol_gfi=0.01,tol_favor=0.0001)
 
         # Migration Network --------------------------------------
@@ -138,8 +130,8 @@ def main(input_filepath, output_filepath):
         G = NFC.G
 
         # Save
-        network_path = os.path.join(s3_path, year, "migration_network.graphml")
-        write_s3_graphml(G, bucket, network_path)
+        network_path = os.path.join(output_filepath, year, "migration_network.graphml")
+        write_s3_graphml(G, network_path)
         
     etl = PanelDataETL(input_filepath=input_filepath, output_filepath=output_filepath)
     df_model = etl.run()
