@@ -13,7 +13,7 @@ from src.data.financial_network import (
     IndustryNetworkCreation,
     IndustryNetworkCreationEORA,
 )
-from src.data.migration_network import MigrationNetworkCreation
+from src.data.migration_network import MigrationNetworkCreation, EstimatedMigrationNetwork
 from src.data.panel_data_etl import PanelDataETL
 
 from src.utils.utils_s3 import read_s3_graphml, write_s3_graphml
@@ -44,49 +44,13 @@ def main(input_filepath, output_filepath):
     """
     logger = logging.getLogger(__name__)
     logger.info("making final data set from raw data")
-
+    
     for year in range(2000, 2019):
-
+        
         year = str(year)
         print("Processing year ", year)
-
-        countries_under_study = [
-            "AUS",
-            "AUT",
-            "BEL",
-            "CAN",
-            "CZE",
-            "DNK",
-            "FIN",
-            "FRA",
-            "DEU",
-            "HUN",
-            "ISL",
-            "ITA",
-            "JPN",
-            "KOR",
-            "LUX",
-            "NLD",
-            "NZL",
-            "NOR",
-            "POL",
-            "SVK",
-            "ESP",
-            "SWE",
-            "CHE",
-            "GBR",
-            "USA",
-            "CHL",
-            "EST",
-            "GRC",
-            "MEX",
-            "SVN",
-            "PRT",
-            "ISR",
-            "IRL",
-            "LVA",
-        ]
         
+        '''
         # Capital Networks -------------------------
         INC = IndustryNetworkCreationEORA(
             year=year, input_filepath=input_filepath, output_filepath=output_filepath
@@ -115,24 +79,32 @@ def main(input_filepath, output_filepath):
                                tol_gfi=0.01,tol_favor=0.0001)
 
         # Migration Network --------------------------------------
-        
         MNC = MigrationNetworkCreation(
             year=year, input_filepath=input_filepath, output_filepath=output_filepath
         )
         MNC.run()
 
-        # Subgaph with the countries under study 
-        #G = MNC.G.subgraph(countries_under_study)
-
         # Compute network features
         NFC = NetworkFeatureComputation(MNC.G)
         NFC.compute_features(tol_gfi=0.00001, tol_favor=1e-15)
-        G = NFC.G
 
         # Save
         network_path = os.path.join(output_filepath, year, "migration_network.graphml")
-        write_s3_graphml(G, network_path)
+        write_s3_graphml(NFC.G, network_path)
+        '''
+        # Estimated migration network ----------------------
+        B = read_s3_graphml(os.path.join(output_filepath, year, "B_country.graphml"))
+        emn = EstimatedMigrationNetwork(B, input_filepath, output_filepath)
+        estimated_M = emn.estimate_emigration_rate()
         
+        # Compute network features
+        NFC = NetworkFeatureComputation(estimated_M)
+        NFC.compute_features(tol_gfi=0.00001, tol_favor=1e-15)
+
+        # Save
+        network_path = os.path.join(output_filepath, year, "estimated_migration_network.graphml")
+        write_s3_graphml(NFC.G, network_path)
+
     etl = PanelDataETL(input_filepath=input_filepath, output_filepath=output_filepath)
     df_model = etl.run()
 

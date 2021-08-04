@@ -1,6 +1,7 @@
 import os
 import networkx as nx
 import pandas as pd
+import numpy as np
 
 class MigrationNetworkCreation:
         
@@ -75,3 +76,34 @@ class MigrationNetworkCreation:
         self.map_row_countries()
         
         self.create_network()
+
+class EstimatedMigrationNetwork:
+    
+    def __init__(self, B, input_filepath, output_filepath):
+        
+        self.estimated_M = B.copy()
+        self.input_filepath = input_filepath
+        self.output_filepath = output_filepath
+        
+    def load_emigration_rates(self):
+
+        df_emigration_rate = pd.read_csv(os.path.join(self.input_filepath,'File4_DIOC-E_3_Emigration Rates.csv'), encoding='latin-1')
+        columns = ['coub', 'ERT1']
+        df_emigration_rate = df_emigration_rate.loc[df_emigration_rate.sex == 'Total', columns]
+        df_emigration_rate.columns = ['country', 'emigration_rate']
+        df_emigration_rate['emigration_rate'] = df_emigration_rate['emigration_rate']/100
+        df_emigration_rate.dropna(inplace=True)
+        
+        self.emigration_rate = dict(zip(df_emigration_rate.country, df_emigration_rate.emigration_rate))
+        
+    def estimate_emigration_rate(self):
+        
+        self.load_emigration_rates()
+        
+        self.totals = dict(self.estimated_M.out_degree(weight='weight'))
+        
+        for u,v,d in self.estimated_M.edges(data=True):
+            d['weight'] *= self.emigration_rate.get(u, np.nan)/self.totals.get(u, 0)
+            if u==v:d['weight'] = 0
+                
+        return self.estimated_M

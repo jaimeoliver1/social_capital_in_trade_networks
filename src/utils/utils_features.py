@@ -6,7 +6,7 @@ from src.utils.utils_networks import godfhater_index, bridging_centrality, favor
 import os
 from pathlib import Path
 from collections import defaultdict
-
+import warnings
 
 class NetworkFeatureComputation:
     def __init__(self, graph):
@@ -18,14 +18,27 @@ class NetworkFeatureComputation:
         '''
         self.df = pd.DataFrame(list(self.G.nodes), columns=['country_industry'])
         
-        h,a=nx.hits(self.G, max_iter=500)
-        h = {k:{'hubs':v} for k,v in h.items()}
-        a = {k:{'authorities':v} for k,v in a.items()}
+        try:
+            h,a=nx.hits(self.G, max_iter=750)
+            h = {k:{'hubs':v} for k,v in h.items()}
+            a = {k:{'authorities':v} for k,v in a.items()}
+
+        except nx.PowerIterationFailedConvergence:
+            warnings.warn("nx.PowerIterationFailedConvergence")
+            h = {n:{'hubs':np.nan} for n in self.G.nodes()}
+            a = {n:{'authorities':np.nan} for n in self.G.nodes()}
+
         nx.set_node_attributes(self.G, h)
         nx.set_node_attributes(self.G, a)
 
-        pagerank_dict = nx.pagerank(self.G)
-        pagerank_dict = {k:{'pagerank':v} for k,v in pagerank_dict.items()}
+        try:
+            warnings.warn("nx.PowerIterationFailedConvergence")
+            pagerank_dict = nx.pagerank(self.G, max_iter=1000, weight='weight')
+            pagerank_dict = {k:{'pagerank':v} for k,v in pagerank_dict.items()}
+
+        except nx.PowerIterationFailedConvergence:
+            pagerank_dict = {n:{'pagerank':np.nan} for n in self.G.nodes()}
+
         nx.set_node_attributes(self.G, pagerank_dict)
         
         gfi = godfhater_index(self.G, tol=tol_gfi)

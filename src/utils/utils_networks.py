@@ -15,7 +15,7 @@ def favor_centrality(G, tol=0.0001):
 
     return dict(zip(G, favor_centrality_list)) 
 
-def bridging_centrality(G, p=1, T=10):
+def bridging_centrality(G, p=1, T=5):
 
     if len(G) == 0:
         raise nx.NetworkXPointlessConcept('cannot compute centrality for the null graph')

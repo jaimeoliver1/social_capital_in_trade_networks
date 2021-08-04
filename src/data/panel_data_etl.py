@@ -4,6 +4,8 @@ import networkx as nx
 import numpy as np
 from sklearn.preprocessing import PowerTransformer
 
+from src.utils.utils_s3 import read_s3_graphml, write_s3_graphml
+
 class PanelDataETL:
     
     def __init__(self,input_filepath, output_filepath):
@@ -22,7 +24,7 @@ class PanelDataETL:
             year = str(year)
             # Capital network --------------------------------------------
             network_path = os.path.join(self.output_filepath, year, 'A_country.graphml')
-            G = nx.readwrite.graphml.read_graphml(network_path)
+            G = read_s3_graphml(network_path)
 
             df = pd.DataFrame(index=G.nodes)
 
@@ -33,7 +35,7 @@ class PanelDataETL:
 
             # Goods network --------------------------------------------
             network_path = os.path.join(self.output_filepath, year, 'B_country.graphml')
-            G = nx.readwrite.graphml.read_graphml(network_path)
+            G = read_s3_graphml(network_path)
 
             for c in self.centralities:
                 df['goods_'+c] = df.index.map(nx.get_node_attributes(G,c))
@@ -42,12 +44,21 @@ class PanelDataETL:
 
             # Migration network ---------------------------------------------
             network_path = os.path.join(self.output_filepath, year, 'migration_network.graphml')
-            G = nx.readwrite.graphml.read_graphml(network_path)
+            G = read_s3_graphml(network_path)
 
             for c in self.centralities:
                 df['human_'+c] = df.index.map(nx.get_node_attributes(G,c))
 
             df['human_hhi'] = df.index.map(nx.get_node_attributes(G,'hhi_index'))
+
+            # Estimated Migration network ---------------------------------------------
+            network_path = os.path.join(self.output_filepath, year, 'estimated_migration_network.graphml')
+            G = read_s3_graphml(network_path)
+
+            for c in self.centralities:
+                df['estimated_human_'+c] = df.index.map(nx.get_node_attributes(G,c))
+
+            df['estimated_human_hhi'] = df.index.map(nx.get_node_attributes(G,'hhi_index'))
             
             # Compile ---------------------------
             out_path = os.path.join(self.output_filepath, year, 'industry_output.parquet')
@@ -83,10 +94,8 @@ class PanelDataETL:
         
         self.df = self.df.sort_values(by=['country', 'year'])
 
-
-        all_centrality_cols = ['financial_'+c for c in self.centralities]
-        all_centrality_cols += ['goods_'+c for c in self.centralities]
-        all_centrality_cols += ['human_'+c for c in self.centralities]
+        networks = ['financial', 'goods', 'human', 'estimated_human']
+        all_centrality_cols = [f'{n}_{c}' for c in self.centralities for n in networks]
         
         for c in all_centrality_cols + ['log_output', 'log_gdp']:
             self.df['lag_' + c] = self.df.groupby('country')[c].shift(1)
@@ -95,7 +104,6 @@ class PanelDataETL:
 
         self.df['lag_log2_output'] = self.df.groupby('country').log_output.shift(2)
         self.df['lag_log2_gdp'] = self.df.groupby('country').log_gdp.shift(2)
-        
         
         #self.df = self.power_tansformation(df = self.df, columns = all_centrality_cols)
         
