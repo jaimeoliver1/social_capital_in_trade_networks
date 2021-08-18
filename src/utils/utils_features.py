@@ -32,11 +32,11 @@ class NetworkFeatureComputation:
         nx.set_node_attributes(self.G, a)
 
         try:
-            warnings.warn("nx.PowerIterationFailedConvergence")
             pagerank_dict = nx.pagerank(self.G, max_iter=1000, weight='weight')
             pagerank_dict = {k:{'pagerank':v} for k,v in pagerank_dict.items()}
 
         except nx.PowerIterationFailedConvergence:
+            warnings.warn("nx.PowerIterationFailedConvergence")
             pagerank_dict = {n:{'pagerank':np.nan} for n in self.G.nodes()}
 
         nx.set_node_attributes(self.G, pagerank_dict)

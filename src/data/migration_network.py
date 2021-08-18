@@ -86,11 +86,17 @@ class EstimatedMigrationNetwork:
         self.output_filepath = output_filepath
         
     def load_emigration_rates(self):
-
+        '''
+        Load percentage of the population emigrating (in year 2000) for every country
+        '''
         df_emigration_rate = pd.read_csv(os.path.join(self.input_filepath,'File4_DIOC-E_3_Emigration Rates.csv'), encoding='latin-1')
         columns = ['coub', 'ERT1']
         df_emigration_rate = df_emigration_rate.loc[df_emigration_rate.sex == 'Total', columns]
+
         df_emigration_rate.columns = ['country', 'emigration_rate']
+        df_emigration_rate['country'] = df_emigration_rate['country'].map(lambda x: x if len(x)==3 else x[5:])
+        df_emigration_rate['country'] = df_emigration_rate['country'].map(lambda x: {'-NO':'PRK','-SO':'KOR'}.get(x,x))
+
         df_emigration_rate['emigration_rate'] = df_emigration_rate['emigration_rate']/100
         df_emigration_rate.dropna(inplace=True)
         
@@ -103,7 +109,11 @@ class EstimatedMigrationNetwork:
         self.totals = dict(self.estimated_M.out_degree(weight='weight'))
         
         for u,v,d in self.estimated_M.edges(data=True):
-            d['weight'] *= self.emigration_rate.get(u, np.nan)/self.totals.get(u, 0)
-            if u==v:d['weight'] = 0
+            d['weight'] *= self.emigration_rate.get(u, 0)/self.totals.get(u, 0)
+            if u==v: d['weight'] = 0
+            if u=='PRK': d['weight'] = 0
+        
+        remove = [node for node,degree in dict(self.estimated_M.out_degree(weight='weight')).items() if degree == 0] 
+        self.estimated_M.remove_nodes_from(remove)                
                 
         return self.estimated_M
