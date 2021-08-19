@@ -50,7 +50,7 @@ def main(input_filepath, output_filepath):
         year = str(year)
         print("Processing year ", year)
         
-        '''
+        
         # Capital Networks -------------------------
         INC = IndustryNetworkCreationEORA(
             year=year, input_filepath=input_filepath, output_filepath=output_filepath
@@ -91,7 +91,7 @@ def main(input_filepath, output_filepath):
         # Save
         network_path = os.path.join(output_filepath, year, "migration_network.graphml")
         write_s3_graphml(NFC.G, network_path)
-        '''
+        
         # Estimated migration network ----------------------
         B = read_s3_graphml(os.path.join(output_filepath, year, "B_country.graphml"))
         emn = EstimatedMigrationNetwork(B, input_filepath, output_filepath)
@@ -99,7 +99,7 @@ def main(input_filepath, output_filepath):
         
         # Compute network features
         NFC = NetworkFeatureComputation(estimated_M)
-        NFC.compute_features(tol_gfi=0.00001, tol_favor=1e-15)
+        NFC.compute_features(tol_gfi=0.00001, tol_favor=0.001)
 
         # Save
         network_path = os.path.join(output_filepath, year, "estimated_migration_network.graphml")

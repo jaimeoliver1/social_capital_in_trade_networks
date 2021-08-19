@@ -8,10 +8,13 @@ def favor_centrality(G, tol=0.0001):
         raise nx.NetworkXPointlessConcept('cannot compute centrality for the null graph')
         
     g = nx.linalg.graphmatrix.adjacency_matrix(G).toarray()
+    g2 = g.dot(g)
 
-    supported_friends = (g.dot(g) > tol) & (g > tol)
+    supported_friends = (g2 > tol) & (g > tol)
 
     favor_centrality_list =  supported_friends.sum(axis=1)
+
+    favor_centrality_list = g2.sum(axis=1)
 
     return dict(zip(G, favor_centrality_list)) 
 
