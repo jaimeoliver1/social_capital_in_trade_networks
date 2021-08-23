@@ -2,6 +2,7 @@ import os
 import networkx as nx
 import pandas as pd
 import numpy as np
+import country_converter as coco
 
 class MigrationNetworkCreation:
         
@@ -10,6 +11,31 @@ class MigrationNetworkCreation:
         self.year=year
         self.input_filepath=input_filepath
         self.output_filepath=output_filepath
+
+    def un_matrix_ingestion(self):
+
+        df = pd.read_excel('s3://workspaces-clarity-mgmt-pro/jaime.oliver/misc/social_capital/data/raw/UN_MigrantStockByOriginAndDestination_2019.xlsx', 
+                   sheet_name='Table 1',
+                    engine='openpyxl',
+                   skiprows=15,
+                   dtype=str
+        )
+
+        iso3 = coco.convert(list(df.columns), to = 'iso3')
+        country_mapping = dict(zip(df.columns, iso3))
+
+        df.rename(columns = {'Unnamed: 0':'year', 'Unnamed: 2':'region'}, inplace=True)
+        df.drop(columns = [c for c in df.columns if 'Unnamed' in c],  inplace=True)
+        df = df.set_index(['year', 'region'])
+
+        df.columns = [country_mapping[c] for c in df.columns]
+        df.drop(columns = ['not found'], inplace=True)
+
+        df.reset_index(inplace=True)
+        df['region'] = df['region'].map(country_mapping)
+        df.dropna(subset=['region'], inplace=True)
+
+        df.set_index(['year','region']).fillna(0)
 
     def oecd_matrix_ingestion(self):
         data_path = os.path.join(self.input_filepath, 'MIG_12082020131505678.csv')
