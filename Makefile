@@ -28,7 +28,7 @@ requirements: test_environment
 
 ## Make Dataset
 data: requirements
-	$(PYTHON_INTERPRETER) src/data/make_dataset.py data/raw s3://workspaces-clarity-mgmt-pro/jaime.oliver/misc/social_capital/
+	$(PYTHON_INTERPRETER) src/data/make_dataset.py s3://workspaces-clarity-mgmt-pro/jaime.oliver/misc/social_capital/raw s3://workspaces-clarity-mgmt-pro/jaime.oliver/misc/social_capital/processed/
 
 ## Make analysis
 analysis: requirements

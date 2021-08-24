@@ -19,7 +19,7 @@ class PanelDataETL:
 
         all_years = []
 
-        for year in range(2000, 2019):
+        for year in range(1990, 2020):
             
             year = str(year)
             # Capital network --------------------------------------------
@@ -51,6 +51,7 @@ class PanelDataETL:
 
             df['human_hhi'] = df.index.map(nx.get_node_attributes(G,'hhi_index'))
 
+            '''
             # Estimated Migration network ---------------------------------------------
             network_path = os.path.join(self.output_filepath, year, 'estimated_migration_network.graphml')
             G = read_s3_graphml(network_path)
@@ -59,7 +60,7 @@ class PanelDataETL:
                 df['estimated_human_'+c] = df.index.map(nx.get_node_attributes(G,c))
 
             df['estimated_human_hhi'] = df.index.map(nx.get_node_attributes(G,'hhi_index'))
-            
+            '''
             # Compile ---------------------------
             out_path = os.path.join(self.output_filepath, year, 'industry_output.parquet')
             df_out=pd.read_parquet(out_path)
@@ -94,7 +95,7 @@ class PanelDataETL:
         
         self.df = self.df.sort_values(by=['country', 'year'])
 
-        networks = ['financial', 'goods', 'human', 'estimated_human']
+        networks = ['financial', 'goods', 'human']
         all_centrality_cols = [f'{n}_{c}' for c in self.centralities for n in networks]
         
         for c in all_centrality_cols + ['log_output', 'log_gdp']:
@@ -222,7 +223,6 @@ class PanelDataETL:
         df_model['constant'] = 1
 
         df_model.year = df_model.year.astype(int)
-        df_model.query('year <= 2018 & year >=2000', inplace=True)
 
         print('countries lost because of population missing: ', set(df_net.country) - set(df_population.country))
         return df_model

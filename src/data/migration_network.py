@@ -14,19 +14,20 @@ class MigrationNetworkCreation:
 
     def un_matrix_ingestion(self):
 
-        df = pd.read_excel('s3://workspaces-clarity-mgmt-pro/jaime.oliver/misc/social_capital/data/raw/UN_MigrantStockByOriginAndDestination_2019.xlsx', 
+        data_path = os.path.join(self.input_filepath, 'UN_MigrantStockByOriginAndDestination_2019.xlsx')
+        df = pd.read_excel(data_path, 
                    sheet_name='Table 1',
                     engine='openpyxl',
                    skiprows=15,
                    dtype=str
         )
 
-        iso3 = coco.convert(list(df.columns), to = 'iso3')
-        country_mapping = dict(zip(df.columns, iso3))
-
         df.rename(columns = {'Unnamed: 0':'year', 'Unnamed: 2':'region'}, inplace=True)
         df.drop(columns = [c for c in df.columns if 'Unnamed' in c],  inplace=True)
         df = df.set_index(['year', 'region'])
+
+        iso3 = coco.convert(list(df.columns), to = 'iso3')
+        country_mapping = dict(zip(df.columns, iso3))
 
         df.columns = [country_mapping[c] for c in df.columns]
         df.drop(columns = ['not found'], inplace=True)
@@ -35,7 +36,25 @@ class MigrationNetworkCreation:
         df['region'] = df['region'].map(country_mapping)
         df.dropna(subset=['region'], inplace=True)
 
-        df.set_index(['year','region']).fillna(0)
+        df = df.set_index(['year','region'])
+        df = df.stack()
+
+        df = df.to_frame().reset_index()
+        df.columns = ['year', 'country_to', 'country_from', 'weight']
+        df['year'] = pd.to_datetime(df['year'], format='%Y')
+
+        df['weight'] = pd.to_numeric(df['weight'], errors = 'coerce')
+
+        def interpolator(mini_df):
+            mini_df = mini_df.set_index('year')[['weight']]
+            mini_df =  mini_df.resample('Y').ffill(limit=1)
+            return mini_df.interpolate()
+
+        self.df = df.groupby(['country_from', 'country_to']).apply(interpolator).reset_index()
+
+        self.df['year'] = self.df['year'].dt.year.astype(str)
+        self.df = self.df[self.df.year == self.year]
+        self.df = self.df[['country_from', 'country_to', 'weight']]
 
     def oecd_matrix_ingestion(self):
         data_path = os.path.join(self.input_filepath, 'MIG_12082020131505678.csv')
@@ -91,9 +110,12 @@ class MigrationNetworkCreation:
                                          edge_attr='weight',
                                          create_using=nx.DiGraph)
 
-    def run(self):
+    def run(self, source = 'un'):
 
-        self.oecd_matrix_ingestion()
+        if source == 'un':
+            self.un_matrix_ingestion()
+        else:
+            self.oecd_matrix_ingestion()
         
         self.population_etl()
         

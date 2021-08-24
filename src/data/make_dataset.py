@@ -45,11 +45,10 @@ def main(input_filepath, output_filepath):
     logger = logging.getLogger(__name__)
     logger.info("making final data set from raw data")
     
-    for year in range(2000, 2019):
+    for year in range(1995, 2020):
         
         year = str(year)
         print("Processing year ", year)
-        
         
         # Capital Networks -------------------------
         INC = IndustryNetworkCreationEORA(
@@ -65,7 +64,6 @@ def main(input_filepath, output_filepath):
         data_path = os.path.join(output_filepath, year, "gdp.parquet")
         INC.df_gdp.to_parquet(data_path)
 
-        
         # Graph representation financial flows
         network_from_adjacency(adjacency_matrix=INC.A.T, # REMEMBER: io tables are transposed adj matrix
                                node_index=INC.node_index,                               
@@ -77,12 +75,12 @@ def main(input_filepath, output_filepath):
                                node_index=INC.node_index,
                                path = os.path.join(output_filepath, year, "B_country.graphml"),
                                tol_gfi=0.01,tol_favor=0.0001)
-
+        
         # Migration Network --------------------------------------
         MNC = MigrationNetworkCreation(
             year=year, input_filepath=input_filepath, output_filepath=output_filepath
         )
-        MNC.run()
+        MNC.run(source='un')
 
         # Compute network features
         NFC = NetworkFeatureComputation(MNC.G)
