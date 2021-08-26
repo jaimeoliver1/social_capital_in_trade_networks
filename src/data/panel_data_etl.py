@@ -40,7 +40,7 @@ class PanelDataETL:
             for c in self.centralities:
                 df['goods_'+c] = df.index.map(nx.get_node_attributes(G,c))
                 
-            df['goods_hhi'] = df.index.map(nx.get_node_attributes(G,'goods_index'))
+            df['goods_hhi'] = df.index.map(nx.get_node_attributes(G,'hhi_index'))
 
             # Migration network ---------------------------------------------
             network_path = os.path.join(self.output_filepath, year, 'migration_network.graphml')
@@ -134,7 +134,7 @@ class PanelDataETL:
         data_path = os.path.join(self.input_filepath, 'API_NE.GDI.TOTL.CD_DS2_en_excel_v2_1742937.xls')
         df = pd.read_excel(data_path, skiprows=3)
         df.set_index('Country Code', inplace=True)
-        df = df[[str(s) for s in range(2000, 2019)]].stack().reset_index()
+        df = df[[str(s) for s in range(1990, 2020)]].stack().reset_index()
         df.columns = ['country', 'year', 'GFCF']
 
         # Log
