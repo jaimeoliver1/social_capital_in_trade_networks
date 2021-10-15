@@ -45,7 +45,7 @@ def main(input_filepath, output_filepath):
     logger = logging.getLogger(__name__)
     logger.info("making final data set from raw data")
     
-    for year in range(1990, 2021):
+    for year in range(1990, 2020):
         
         year = str(year)
         print("Processing year ", year)
