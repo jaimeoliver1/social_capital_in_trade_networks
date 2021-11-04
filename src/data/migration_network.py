@@ -89,7 +89,7 @@ class MigrationNetworkCreation:
         
     def map_row_countries(self):
         
-        data_path = os.path.join(self.output_filepath, '2000', 'gdp.parquet')
+        data_path = os.path.join(self.output_filepath, '2005', 'gdp.parquet')
 
         df_countries = pd.read_parquet(data_path)
 

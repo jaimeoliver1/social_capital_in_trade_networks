@@ -19,7 +19,7 @@ class PanelDataETL:
 
         all_years = []
 
-        for year in range(1990, 2020):
+        for year in range(2005, 2016):
             
             year = str(year)
             # Capital network --------------------------------------------

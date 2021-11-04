@@ -92,7 +92,7 @@ class IndustryNetworkCreation:
 
     def __init__(self, year: str, input_filepath: str, output_filepath: str):
         self.year=year
-        self.input_filepath=input_filepath
+        self.input_filepath='s3://workspaces-clarity-mgmt-pro/jaime.oliver/jobs/value_chain/oecd/input_output/'
         self.output_filepath=output_filepath
 
     def oecd_matrix_ingestion(self):
@@ -171,6 +171,10 @@ class IndustryNetworkCreation:
         
         # value added per unit output -- 0 value added if no value added is computed
         self.value_added_per_output_unit =  self.w / self.x
+        
+    def downstream_chain(self):
+        self.B = self.Z.T/self.x
+        self.B = self.B.T
 
     def save(self):
         ############################################################################################
@@ -208,6 +212,8 @@ class IndustryNetworkCreation:
 
         self.upstream_chain()
 
+        self.downstream_chain()
+        
         self.get_output()
 
         self.get_gdp()
