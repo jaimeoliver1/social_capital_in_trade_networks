@@ -2,6 +2,7 @@ from linearmodels import IV2SLS, IVLIML, IVGMM, IVGMMCUE
 import pandas as pd
 import numpy as np
 
+
 class PanelLaggedDep(IVGMM):
     '''
     Estimates values of rho and beta in the following Arrelano Bond model on a panel data set:
@@ -21,7 +22,7 @@ class PanelLaggedDep(IVGMM):
     
     `lags` is the number of lags of the `endog` series. Untested for anything other than lags==1
     '''
-    def __init__(self, endog, exogs, lags=1, iv_max_lags=5, systemGMM = False):
+    def __init__(self, endog, exogs, lags=1, iv_max_lags=1000, systemGMM = False):
         min_t = min(endog.index.get_level_values(1)) #starting period
         T = max(endog.index.get_level_values(1)) + 1 - min_t #total number of periods
         
@@ -55,15 +56,18 @@ class PanelLaggedDep(IVGMM):
         #Set up the instruments -- lags of the endog levels for different time periods
         instrnames = []
         gb = endog.groupby(level=0)
-        for t in range(lags+1, min(T, lags+1+iv_max_lags)): #TODO: Check this -- works for lags == 1, not sure if for anything else
-            col = f'IVL_{t}'
-            self.data[col] = gb.shift(t)
-            instrnames.append(col)
-            data_pos = endog.index.get_level_values(1) < t+min_t
-            self.data.loc[data_pos, col] = np.nan
+        for k in range(lags+1, min(T, lags+1+iv_max_lags)): #TODO: Check this -- works for lags == 1, not sure if for anything else
+            shifted = gb.shift(k)
+            for t in range(k, T):
+                col = 'ILVL_t%iL%i'%(t+min_t,k)
+                instrnames.append(col)
+                instrument = pd.Series(0, index=endog.index)
+                data_pos = endog.index.get_level_values(1) == t+min_t
+                instrument.loc[data_pos] = shifted[data_pos]
+                self.data[col] = instrument
 
         self.data[[ename] + instrnames].to_csv('instruments.csv')
-        
+
         if systemGMM:
             #With the systems GMM estimator we have additional instruments of lagged differences
             instrnamessys = []
@@ -102,19 +106,3 @@ class PanelLaggedDep(IVGMM):
         dropped = self.data.dropna()
         dropped['CLUSTER_VAR'] = dropped.index.get_level_values(0)
         IVGMM.__init__(self, dropped[Dename], dropped[Dxnames], dropped[LDenames], dropped[instrnames], weight_type='clustered', clusters = dropped['CLUSTER_VAR'])
-
-
-'''
-from utils import data_loader
-
-output_filepath = 's3://workspaces-clarity-mgmt-pro/jaime.oliver/misc/social_capital/data/processed/'
-reduced_terms_list, df_model = data_loader(output_filepath)
-df_model = df_model[df_model.country == 'ESP']
-df_model = df_model[df_model.year.between(2000, 2016)]
-
-df_index = df_model.set_index(['country', 'year'])
-model = PanelLaggedDep(endog = df_index['log_gdp'],
-                       exogs = df_index[[reduced_terms_list[0]]], 
-                       lags=1, 
-                       systemGMM = False)
-'''
