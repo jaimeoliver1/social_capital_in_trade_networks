@@ -22,7 +22,7 @@ class PanelLaggedDep(IVGMM):
     
     `lags` is the number of lags of the `endog` series. Untested for anything other than lags==1
     '''
-    def __init__(self, endog, exogs, lags=1, iv_max_lags=1000, systemGMM = False):
+    def __init__(self, endog, exogs, lags=1, iv_max_lags=1000, systemGMM = False, add_intercept = False):
         min_t = min(endog.index.get_level_values(1)) #starting period
         T = max(endog.index.get_level_values(1)) + 1 - min_t #total number of periods
         
@@ -103,6 +103,11 @@ class PanelLaggedDep(IVGMM):
             #Now append the series together
             self.data = data1.append(data2)
                 
+        # Add intercept
+        if add_intercept:
+            self.data['constant'] = 1
+            Dxnames += ['constant']
+            
         dropped = self.data.dropna()
         dropped['CLUSTER_VAR'] = dropped.index.get_level_values(0)
         IVGMM.__init__(self, dropped[Dename], dropped[Dxnames], dropped[LDenames], dropped[instrnames], weight_type='clustered', clusters = dropped['CLUSTER_VAR'])
