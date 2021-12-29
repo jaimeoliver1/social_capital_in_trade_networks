@@ -2,6 +2,9 @@ import pandas as pd
 import os
 import numpy as np
 
+from linearmodels.panel import PooledOLS, compare
+
+
 def data_loader(output_filepath):
     
     data_path = os.path.join(output_filepath, 'panel_data.parquet')

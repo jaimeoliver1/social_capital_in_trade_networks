@@ -22,7 +22,17 @@ class PanelLaggedDep(IVGMM):
     
     `lags` is the number of lags of the `endog` series. Untested for anything other than lags==1
     '''
-    def __init__(self, endog, exogs, lags=1, iv_max_lags=1000, systemGMM = False, add_intercept = False):
+    def __init__(self, 
+                 endog, 
+                 exogs, 
+                 lags=1, 
+                 iv_max_lags=1000, 
+                 systemGMM = False, 
+                 add_intercept = False, 
+                 time_effects=False,
+                 entity_effects=False, 
+                 weight_type='clustered'):
+
         min_t = min(endog.index.get_level_values(1)) #starting period
         T = max(endog.index.get_level_values(1)) + 1 - min_t #total number of periods
         
@@ -66,8 +76,6 @@ class PanelLaggedDep(IVGMM):
                 instrument.loc[data_pos] = shifted[data_pos]
                 self.data[col] = instrument
 
-        self.data[[ename] + instrnames].to_csv('instruments.csv')
-
         if systemGMM:
             #With the systems GMM estimator we have additional instruments of lagged differences
             instrnamessys = []
@@ -107,7 +115,25 @@ class PanelLaggedDep(IVGMM):
         if add_intercept:
             self.data['constant'] = 1
             Dxnames += ['constant']
-            
+
+        if entity_effects:
+            df_dummies = pd.get_dummies(self.data.index.get_level_values(0), drop_first=True)
+            df_dummies.index = self.data.index.copy()
+            self.data = self.data.join(df_dummies)
+            Dxnames += list(df_dummies.columns)
+
+        if time_effects:
+            df_dummies = pd.get_dummies(self.data.index.get_level_values(1), drop_first=True)
+            df_dummies.index = self.data.index.copy()
+            self.data = self.data.join(df_dummies)
+            Dxnames += list(df_dummies.columns)
+
         dropped = self.data.dropna()
-        dropped['CLUSTER_VAR'] = dropped.index.get_level_values(0)
-        IVGMM.__init__(self, dropped[Dename], dropped[Dxnames], dropped[LDenames], dropped[instrnames], weight_type='clustered', clusters = dropped['CLUSTER_VAR'])
+
+        if weight_type == 'clustered':
+            dropped['CLUSTER_VAR'] = dropped.index.get_level_values(0)
+            IVGMM.__init__(self, dropped[Dename], dropped[Dxnames], dropped[LDenames], dropped[instrnames], weight_type=weight_type, clusters = dropped['CLUSTER_VAR'])
+
+        else:
+            IVGMM.__init__(self, dropped[Dename], dropped[Dxnames], dropped[LDenames], dropped[instrnames], weight_type=weight_type)
+
