@@ -32,7 +32,7 @@ def data_loader(output_filepath):
     reduced_terms_list = all_terms_list.copy()
     reduced_terms_list.remove('goods_favor')
     reduced_terms_list.remove('financial_favor')
-    #reduced_terms_list.remove('human_bridging')
+    reduced_terms_list.remove('human_authorities')
 
     df_model.sort_values(by = ['country', 'year'], inplace=True)    
 

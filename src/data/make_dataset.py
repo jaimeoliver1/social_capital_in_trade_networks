@@ -45,7 +45,7 @@ def main(input_filepath, output_filepath):
     logger = logging.getLogger(__name__)
     logger.info("making final data set from raw data")
     
-    '''
+    
     for year in range(2005, 2016):
         
         year = str(year)
@@ -81,7 +81,8 @@ def main(input_filepath, output_filepath):
         MNC = MigrationNetworkCreation(
             year=year, input_filepath=input_filepath, output_filepath=output_filepath
         )
-        MNC.run(source='un')
+        #MNC.run(source='un')
+        MNC.run(source='oecd')
 
         # Compute network features
         NFC = NetworkFeatureComputation(MNC.G)
@@ -103,7 +104,7 @@ def main(input_filepath, output_filepath):
         # Save
         network_path = os.path.join(output_filepath, year, "estimated_migration_network.graphml")
         write_s3_graphml(NFC.G, network_path)
-    '''
+    
     etl = PanelDataETL(input_filepath=input_filepath, output_filepath=output_filepath)
     df_model = etl.run()
 
