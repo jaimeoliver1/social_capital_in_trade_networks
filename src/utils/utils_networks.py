@@ -2,12 +2,14 @@ import networkx as nx
 import numpy as np
 import os
 
-def favor_centrality(G, tol=0.0001):
+def favor_centrality(G, tol=0.0001, transpose=False):
 
-    if len(G) == 0:
+    G_compute = G.reverse() if transpose else G.copy()
+    
+    if len(G_compute) == 0:
         raise nx.NetworkXPointlessConcept('cannot compute centrality for the null graph')
         
-    g = nx.linalg.graphmatrix.adjacency_matrix(G).toarray()
+    g = nx.linalg.graphmatrix.adjacency_matrix(G_compute).toarray()
     g2 = g.dot(g)
 
     supported_friends = (g2 > tol) & (g > tol)

@@ -10,8 +10,7 @@ def data_loader(output_filepath):
     df_model = df_model[df_model.year.between(1990, 2016)]
 
     centralities = ['hubs', 'authorities','pagerank', 'gfi', 'bridging', 'favor']
-    centralities = ['hubs', 'authorities', 'bridging', 'favor']
-    centralities = ['hubs', 'authorities', 'favor']
+    centralities = ['hubs', 'authorities', 'in_favor', 'out_favor']
     networks = ['financial', 'goods', 'human']
 
     #df_model = df_model[~df_model.country.isin(['ETH', 'BLR', 'ZWE', 'MDA', 'GUY', 'VNM', 'MAC', 'PSE', 'AGO', 'COD', 'TZA'])]
@@ -27,8 +26,11 @@ def data_loader(output_filepath):
 
     all_terms_list = [f'{n}_{c}' for n in networks for c in centralities]
     reduced_terms_list = all_terms_list.copy()
-    reduced_terms_list.remove('goods_favor')
-    reduced_terms_list.remove('financial_favor')
+    for direction in ['in', 'out']:
+        for network in ['goods', 'financial']:
+            reduced_terms_list.remove(f'{network}_{direction}_favor')
+    
+    reduced_terms_list.remove('human_out_favor')    
     reduced_terms_list.remove('human_authorities')
 
     df_model.sort_values(by = ['country', 'year'], inplace=True)    

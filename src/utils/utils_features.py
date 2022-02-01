@@ -49,9 +49,13 @@ class NetworkFeatureComputation:
         bridging = {k:{'bridging':v} for k,v in bridging.items()}
         nx.set_node_attributes(self.G, bridging)     
         
-        favor = favor_centrality(self.G, tol=tol_favor)
-        favor = {k:{'favor':v} for k,v in favor.items()}
-        nx.set_node_attributes(self.G, favor)   
+        out_favor = favor_centrality(self.G, tol=tol_favor)
+        out_favor = {k:{'out_favor':v} for k,v in out_favor.items()}
+        nx.set_node_attributes(self.G, out_favor)   
+
+        in_favor = favor_centrality(self.G, tol=tol_favor, transpose=True)
+        in_favor = {k:{'in_favor':v} for k,v in in_favor.items()}
+        nx.set_node_attributes(self.G, in_favor)   
         
         g = nx.linalg.graphmatrix.adjacency_matrix(self.G).toarray()
         g = np.nan_to_num(g)

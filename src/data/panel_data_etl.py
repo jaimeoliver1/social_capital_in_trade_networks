@@ -13,7 +13,7 @@ class PanelDataETL:
         self.input_filepath = input_filepath
         self.output_filepath = output_filepath
 
-        self.centralities = ['hubs', 'authorities', 'pagerank', 'gfi', 'bridging', 'favor']
+        self.centralities = ['hubs', 'authorities', 'pagerank', 'gfi', 'bridging', 'in_favor', 'out_favor']
 
     def networks_etl(self):
 
